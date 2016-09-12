@@ -5,172 +5,164 @@ owner: Buildpacks
 
 <strong><%= modified_date %></strong>
 
-After you create a service instance and bind it to an application, you must
-configure the application to connect to the service.
+## <a id='cf-app-utils'></a>Overview of RVM##
 
-## <a id='cf-app-utils'></a>Query VCAP\_SERVICES with cf-app-utils ##
+RVM is a command-line tool for installing and managing Ruby versions and their gems.
 
-The `cf-apps-utils` gem allows your application to search for credentials from
-the `VCAP_SERVICES` environment variable by name, tag, or label.
+It was created by Wayne E. Sequin.
 
-* [cf-app-utils-ruby](https://github.com/cloudfoundry/cf-app-utils-ruby)
+RVM stands for Ruby Version Manager.
 
-## <a id='vcap-services-defines-database-url'></a>VCAP\_SERVICES defines DATABASE\_URL ##
+RVM is very helpful when you need to change the version of Ruby you are working with.
 
-At runtime, the Ruby buildpack creates a `DATABASE_URL` environment variable
-for every Ruby application based on the
-[VCAP_SERVICES](../../devguide/deploy-apps/environment-variable.html#VCAP-SERVICES) environment variable.
+It is also helpful when…
 
-Example VCAP_SERVICES:
+This is the official website for RVM: https://rvm.io/
 
-    VCAP_SERVICES =
-    {
-      "elephantsql": [
-        {
-          "name": "elephantsql-c6c60",
-          "label": "elephantsql",
-          "credentials": {
-            "uri": "postgres://exampleuser:examplepass@babar.elephantsql.com:5432/exampledb"
-          }
-        }
-      ]
-    }
 
-Based on this `VCAP_SERVICES`, the Ruby buildpack creates the following
-`DATABASE_URL` environment variable:
+## <a id='vcap-services-defines-database-url'></a>Checking Your RVM ##
 
-    DATABASE_URL = postgres://exampleuser:examplepass@babar.elephantsql.com:5432/exampledb
+Check to see if RVM is installed by typing this command in your terminal: `rvm -v`
 
-The Ruby buildpack uses the structure of the `VCAP_SERVICES` environment
-variable to populate `DATABASE_URL`.
-Any service containing a JSON object with the following form will be recognized
-by Cloud Foundry as a candidate for `DATABASE_URL`:
-
-    {
-      "some-service": [
-        {
-          "credentials": {
-            "uri": "<some database URL>"
-          }
-        }
-      ]
-    }
-
-Cloud Foundry uses the first candidate found to populate `DATABASE_URL`.
-
-## <a id='rails-applications-have-autoconfigured-database-yml'></a>Older Rails Applications Have Auto-Configured database.yml ##
-
-On Rails versions 4 or before, the Ruby buildpack replaces your `database.yml` with one based on the `DATABASE_URL` variable.
-
-<p class='note'><strong>Note</strong>: On Rails versions 4 or before, Ruby buildpack ignores the contents of any <code>database.yml</code> that you provide and overwrites it during staging.</p>
-
-## <a id='configuring-non-rails-applications'></a>Configure Non-Rails Applications ##
-
-Non-Rails applications can also access the `DATABASE_URL` variable.
-
-If you have more than one service with credentials, only the first will be
-populated into `DATABASE_URL`.
-To access other credentials, you can inspect the `VCAP_SERVICES` environment
-variable.
-
-~~~ruby
-vcap_services = JSON.parse(ENV['VCAP_SERVICES'])
-~~~
-
-Use the hash key for the service to obtain the connection credentials from
-`VCAP_SERVICES`.
-
-- For services that use the <%= vars.api_v2_format %>, the hash key is the name
-  of the service.
-
-- For services that use the <%= vars.api_v1_format %>, the hash key is formed
-  by combining the service provider and version, in the format PROVIDER-VERSION.
-
-  For example, the service provider "p-mysql" with version "n/a" forms the hash
-  key `p-mysql-n/a`.
-
-## <a id='migrate'></a>Seed or Migrate Database ##
-
-Before you can use your database the first time, you must create and populate
-or migrate it.
-For more information, see [Migrating a Database in Cloud Foundry](../../devguide/services/migrate-db.html).
-
-## <a id='troubleshooting'></a>Troubleshooting ##
-
-To aid in troubleshooting issues connecting to your service, you can examine
-the environment variables and log messages Cloud Foundry records for your
-application.
-
-### <a id='view-env'></a>View Environment Variables ###
-
-Use the `cf env` command to view the Cloud Foundry environment variables for
-your application.
-`cf env` displays the following environment variables:
-
-* The `VCAP_SERVICES` variables existing in the container environment
-* The user-provided variables set using the `cf set-env` command
+If RVM is installed you will see a message that shows the version number.
 
 <pre class="terminal">
-  $ cf env my-app
-  Getting env variables for app my-app in org My-Org / space development as admin...
-  OK
-
-  System-Provided:
-  {
-    "VCAP_SERVICES": {
-      "p-mysql-n/a": [
-        {
-          "credentials": {
-              "uri":"postgres://lrra:e6B-X@p-mysqlprovider.example.com:5432/lraa
-          },
-          "label": "p-mysql-n/a",
-          "name": "p-mysql",
-          "syslog_drain_url": "",
-          "tags": ["postgres","postgresql","relational"]
-        }
-      ]
-    }
-  }
-
-  User-Provided:
-  my-env-var: 100
-  my-drain: http://drain.example.com
+  $ rvm -v
+  rvm 1.27.0 (latest) by Wayne E. Seguin <wayneeseguin@gmail.com>, Michal Papis <mpapis@gmail.com> [https://rvm.io/]
 </pre>
 
-### <a id='view-logs'></a>View Logs ###
+If the reply has the word (latest) in parenthesis then you know you have the latest version.  Otherwise download the latest version following the steps in the next section.
 
-Use the `cf logs` command to view the Cloud Foundry log messages for your
-application.
-You can direct current logging to standard output, or you can dump the most
-recent logs to standard output.
 
-Run `cf logs APPNAME` to direct current logging to standard output:
+You can see pertinent information about RVM with this command: `rvm info`
+
 
 <pre class="terminal">
-  $ cf logs my-app
-  Connected, tailing logs for app my-app in org My-Org / space development as admin...
-  1:27:19.72 [App/0]  OUT [CONTAINER]  org.apache.coyote.http11.Http11Protocol  INFO  Starting ProtocolHandler ["http-bio-61013"]
-  1:27:19.77 [App/0]  OUT [CONTAINER]   org.apache.catalina.startup.Catalina     INFO  Server startup in 10427 ms
+  $ rvm info
+
+  ruby-2.3.0:
+
+  system:
+    uname:       "Darwin Marks-MacBook-Air-2.local 15.6.0 Darwin Kernel Version 15.6.0: Mon Aug 29 20:21:34 PDT 2016; root:xnu-3248.60.11~1/RELEASE_X86_64 x86_64"
+    system:      "osx/10.11/x86_64"
+    bash:        "/bin/bash => GNU bash, version 3.2.57(1)-release (x86_64-apple-darwin15)"
+    zsh:         "/bin/zsh => zsh 5.0.8 (x86_64-apple-darwin15.0)"
+
+  rvm:
+    version:      "rvm 1.27.0 (latest) by Wayne E. Seguin <wayneeseguin@gmail.com>, Michal Papis <mpapis@gmail.com> [https://rvm.io/]"
+    updated:      "14 hours 13 minutes 7 seconds ago"
+    path:         "/Users/markmcquillen/.rvm"
+
+  ruby:
+    interpreter:  "ruby"
+    version:      "2.3.0p0"
+    date:         "2015-12-25"
+    platform:     "x86_64-darwin15"
+    patchlevel:   "2015-12-25 revision 53290"
+    full_version: "ruby 2.3.0p0 (2015-12-25 revision 53290) [x86_64-darwin15]"
+
+  homes:
+    gem:          "/Users/markmcquillen/.rvm/gems/ruby-2.3.0"
+    ruby:         "/Users/markmcquillen/.rvm/rubies/ruby-2.3.0"
+
+  binaries:
+    ruby:         "/Users/markmcquillen/.rvm/rubies/ruby-2.3.0/bin/ruby"
+    irb:          "/Users/markmcquillen/.rvm/rubies/ruby-2.3.0/bin/irb"
+    gem:          "/Users/markmcquillen/.rvm/rubies/ruby-2.3.0/bin/gem"
+    rake:         "/Users/markmcquillen/.rvm/gems/ruby-2.3.0/bin/rake"
+
+  environment:
+    PATH:         "/Users/markmcquillen/.rvm/gems/ruby-2.3.0/bin:/Users/markmcquillen/.rvm/gems/ruby-2.3.0@global/bin:/Users/markmcquillen/.rvm/rubies/ruby-2.3.0/bin:/Users/markmcquillen/.rvm/bin:/Users/markmcquillen/.rbenv/shims:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Applications/Postgres.app/Contents/Versions/9.3/bin:/usr/local/heroku/bin:/Users/markmcquillen/bin"
+    GEM_HOME:     "/Users/markmcquillen/.rvm/gems/ruby-2.3.0"
+    GEM_PATH:     "/Users/markmcquillen/.rvm/gems/ruby-2.3.0:/Users/markmcquillen/.rvm/gems/ruby-2.3.0@global"
+    MY_RUBY_HOME: "/Users/markmcquillen/.rvm/rubies/ruby-2.3.0"
+    IRBRC:        "/Users/markmcquillen/.rvm/rubies/ruby-2.3.0/.irbrc"
+    RUBYOPT:      ""
+    gemset:       ""
 </pre>
 
-Run `cf logs APPNAME --recent` to dump the most recent logs to standard output:
+
+## <a id='rails-applications-have-autoconfigured-database-yml'></a>Installing RVM ##
+
+Install RVM by typing this command in your terminal:
+`\curl -L https://get.rvm.io | bash -s stable`
+
+Close your terminal and reopen it.  
+Check to see if RVM loaded correctly by typing this command:
+`rvm | head -n 1`
+
+This should return: `= rvm` 
+
+You can also check to see if RVM loaded correctly with this command:
+`type rvm | head -1`
+
+This should return: `rvm is a function`
+
+If RVM did not load correctly you may see a message that directs you to make changes to your `~/.bash_profile` or your `~/.bashrc file`.
+
+For instance, you may need to change your export PATHS so they have `$PATH` at the beginnings of the strings rather than at the ends so that they look like this:
+
+
+
 <pre class="terminal">
-  $ cf logs my-app --recent
-  Connected, dumping recent logs for app my-app in org My-Org / space development as admin...
-  1:27:15.93 [App/0]  OUT 15,935  INFO EmbeddedDatabaseFactory:124 - Creating embedded database 'SkyNet'
-  1:27:16.31 [App/0]  OUT 16,318  INFO LocalEntityManagerFactory:287 - Building TM container EntityManagerFactory for unit 'default'
-  1:27:16.50 [App/0]  OUT 16,505  INFO Version:37 - HCANN001: Hibernate Commons Annotations {4.0.1.Final}
-  1:27:16.51 [App/0]  OUT 16,517  INFO Version:41 - HHH412: Hibernate Core {4.1.9.Final}
-  1:27:16.95 [App/0]  OUT 16,957  INFO SkyNet-Online:73 - HHH268: Transaction strategy: org.hibernate.internal.TransactionFactory
-  1:27:16.96 [App/0]  OUT 16,963  INFO InintiateTerminatorT1000Deployment:48 - HHH000397: Using TranslatorFactory
-  1:27:17.02 [App/0]  OUT 17,026  INFO Version:27 - HV001: Hibernate Validator 4.3.0.Final
+  export PATH="$PATH:/usr/local/heroku/bin"
+
+  export PATH="$PATH:/Users/markmcquillen/bin"
 </pre>
 
-If you encounter the error, "A fatal error has occurred. Please see the Bundler
-troubleshooting documentation," update your version of bundler and run `bundle install`.
+
+You may also need to add this line to your `~/.bash_profile` if is not added automatically:
 
 <pre class="terminal">
-  $ gem update bundler
-  $ gem update --system
-  $ bundle install
+  [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
 </pre>
+
+
+Once you have made these change, close the Terminal and open a new Terminal window.
+
+
+Install the latest version of Ruby and set it as default with this command:
+`rvm use ruby --install --default`
+
+Check the Ruby version with:
+`ruby -v`
+
+You can install any version of Ruby with: `rvm install VERSION`
+
+For instance: `rvm install 1.9.2`
+
+<p class='note'><strong>Note</strong>: You can check the path of RVM after installation with this
+  command: <code>env | egrep -v '^PATH' | egrep '^rvm_path'</code></p>
+
+## <a id='change-ruby-versions'></a>Change Ruby Versions ##
+
+See what versions of Ruby you have installed with `rvm list`
+
+<pre class="terminal">
+  $ rvm list
+
+  rvm rubies
+
+     ruby-2.1.2 [ x86_64 ]
+     ruby-2.1.6 [ x86_64 ]
+  =* ruby-2.3.0 [ x86_64 ]
+
+  # => - current
+  # =* - current && default
+  #  * - default
+
+</pre>
+
+
+To switch to a different version of Ruby, type `rvm use VERSION`
+
+For instance: `rvm use 1.9.2`
+
+Type `ruby -v` to see that it has changed.
+
+Now all gems will be installed for this version of Ruby.
+
+If you want to switch back to the System Ruby type: `rvm system`.
+
+
+## <a id='migrate'></a>Isolate Ruby Versions##
